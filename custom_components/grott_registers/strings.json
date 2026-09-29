@@ -1,0 +1,106 @@
+{
+  "config": {
+    "step": {
+      "user": {
+        "title": "Connect to grottserver",
+        "description": "Use the grottserver HTTP API, usually port 5782. This is not the MQTT feed.",
+        "data": {
+          "host": "Host",
+          "port": "Port"
+        }
+      },
+      "inverter": {
+        "title": "Choose the inverter",
+        "data": {
+          "inverter_id": "Inverter serial"
+        }
+      },
+      "manual": {
+        "title": "Inverter serial",
+        "description": "grottserver at {host} did not list an inverter. Enter the serial if you still want the entry.",
+        "data": {
+          "inverter_id": "Inverter serial"
+        }
+      },
+      "reconfigure": {
+        "title": "grottserver address",
+        "data": {
+          "host": "Host",
+          "port": "Port"
+        }
+      }
+    },
+    "error": {
+      "cannot_connect": "Cannot reach grottserver. Check the host and port 5782.",
+      "invalid_inverter": "Enter the inverter serial."
+    },
+    "abort": {
+      "already_configured": "This inverter is already configured.",
+      "reconfigure_successful": "grottserver address updated."
+    }
+  },
+  "options": {
+    "step": {
+      "init": {
+        "title": "Grott register options",
+        "description": "Each refresh reads the registers one at a time, so keep the interval at 15 minutes or slower. Slots 4-6 are extra SPH registers and are not on every inverter.",
+        "data": {
+          "scan_interval": "Update interval (minutes)",
+          "extended_slots": "Include slots 4–6"
+        }
+      }
+    }
+  },
+  "services": {
+    "read_register": {
+      "name": "Read register",
+      "description": "Read one inverter or datalogger register from grottserver.",
+      "fields": {
+        "register": {"name": "Register", "description": "Decimal register number."},
+        "target": {"name": "Target", "description": "inverter or datalogger."},
+        "format": {"name": "Format", "description": "hex, dec, or text. Inverter reads default to hex. Datalogger reads default to text."},
+        "inverter_id": {"name": "Inverter serial", "description": "Required only when more than one inverter is configured."}
+      }
+    },
+    "write_register": {
+      "name": "Write register",
+      "description": "Write one register that is not part of a time slot. Slot times must use Write slot.",
+      "fields": {
+        "register": {"name": "Register", "description": "Decimal register number."},
+        "value": {"name": "Value", "description": "Decimal by default. Use the format field for hex or text."},
+        "target": {"name": "Target", "description": "inverter or datalogger."},
+        "format": {"name": "Format", "description": "dec, hex, or text."},
+        "inverter_id": {"name": "Inverter serial", "description": "Required only when more than one inverter is configured."}
+      }
+    },
+    "write_slot": {
+      "name": "Write schedule slot",
+      "description": "Set a battery-first or grid-first window. Start, stop, and enable are sent together.",
+      "fields": {
+        "schedule": {"name": "Schedule", "description": "battery_first or grid_first."},
+        "slot": {"name": "Slot", "description": "1 to 3, or 4 to 6 on inverters that have the extra block."},
+        "start": {"name": "Start", "description": "HH:MM."},
+        "end": {"name": "End", "description": "HH:MM."},
+        "enabled": {"name": "Enabled", "description": "Turn this window on or off."},
+        "inverter_id": {"name": "Inverter serial", "description": "Required only when more than one inverter is configured."}
+      }
+    },
+    "write_registers": {
+      "name": "Write registers",
+      "description": "Write a contiguous run of inverter registers as concatenated 16-bit hex words.",
+      "fields": {
+        "start_register": {"name": "Start register", "description": "First register, inclusive."},
+        "end_register": {"name": "End register", "description": "Last register, inclusive."},
+        "value": {"name": "Hex value", "description": "Four hex digits per register, concatenated."},
+        "inverter_id": {"name": "Inverter serial", "description": "Required only when more than one inverter is configured."}
+      }
+    },
+    "refresh": {
+      "name": "Refresh registers",
+      "description": "Read the schedule registers now.",
+      "fields": {
+        "inverter_id": {"name": "Inverter serial", "description": "Required only when more than one inverter is configured."}
+      }
+    }
+  }
+}

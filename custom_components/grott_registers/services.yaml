@@ -1,0 +1,120 @@
+read_register:
+  fields:
+    register:
+      required: true
+      selector:
+        number:
+          min: 0
+          max: 4095
+          mode: box
+    target:
+      selector:
+        select:
+          options:
+            - inverter
+            - datalogger
+    format:
+      selector:
+        select:
+          options:
+            - hex
+            - dec
+            - text
+    inverter_id:
+      selector:
+        text:
+
+write_register:
+  fields:
+    register:
+      required: true
+      selector:
+        number:
+          min: 0
+          max: 4095
+          mode: box
+    value:
+      required: true
+      selector:
+        text:
+    target:
+      selector:
+        select:
+          options:
+            - inverter
+            - datalogger
+    format:
+      selector:
+        select:
+          options:
+            - dec
+            - hex
+            - text
+    inverter_id:
+      selector:
+        text:
+
+write_slot:
+  fields:
+    schedule:
+      required: true
+      selector:
+        select:
+          options:
+            - battery_first
+            - grid_first
+    slot:
+      required: true
+      selector:
+        number:
+          min: 1
+          max: 6
+          mode: box
+    start:
+      required: true
+      example: "00:00"
+      selector:
+        time:
+    end:
+      required: true
+      example: "05:30"
+      selector:
+        time:
+    enabled:
+      required: true
+      selector:
+        boolean:
+    inverter_id:
+      selector:
+        text:
+
+write_registers:
+  fields:
+    start_register:
+      required: true
+      selector:
+        number:
+          min: 0
+          max: 4095
+          mode: box
+    end_register:
+      required: true
+      selector:
+        number:
+          min: 0
+          max: 4095
+          mode: box
+    value:
+      required: true
+      example: "0000051e0001"
+      selector:
+        text:
+    inverter_id:
+      selector:
+        text:
+
+refresh:
+  fields:
+    inverter_id:
+      selector:
+        text:
