@@ -34,6 +34,7 @@ A refresh reads the registers one at a time. The default interval is 15 minutes.
 | Grid first 1–3 | 1080–1088 | Start, end, and enabled. |
 | Datalogger time | 31 | Read only. The logger clock the schedule follows. |
 | Sync datalogger time | 31 | Writes the grott server's local time into the logger. |
+| Battery first, Grid first, Load first | — | Read-only calendars. Open **Calendar** to see the day. |
 
 Slots 4–6 (registers 1017–1034) are off by default. Turn them on under **Configure** on the integration entry. On some firmware, grid-first slot 4’s enable register is not a plain on/off value. Leave that option off unless you know the extra block is real on your inverter.
 
@@ -56,6 +57,16 @@ Battery-first and grid-first windows are judged against the datalogger clock (re
 Daylight saving follows the timezone of the grott process. If that host, or its container, is on UTC or has stale timezone data, a 00:00–05:30 window fires at the wrong wall time even when Home Assistant is correct. Check **Datalogger time** against the grott host after the clocks change.
 
 grottserver also writes this clock when the logger connects. The sensor is how you see which time stuck. The same action is `grott_registers.sync_datalogger_time`.
+
+## Schedule calendars
+
+Three calendars are added with the integration: **Battery first**, **Grid first**, and **Load first**. Home Assistant's Calendar draws them as blocks for the day. Each has its own color.
+
+An enabled window becomes a block on its calendar. A window that is switched off is left out, including one whose enable register is not a plain 0 or 1. Load first is every remaining part of the day. On this inverter that is the mode outside an enabled battery-first or grid-first window, so a single enabled slot of 00:00–05:30 is battery first until 05:30 and load first after that.
+
+A window that crosses midnight is split into the evening and the morning. Overlapping windows are both shown.
+
+The calendars are read-only. Change a window with its start, end, and enable entities. The blocks are the register times placed on Home Assistant's local timezone, so the picture lines up when that timezone matches the grott server clock.
 
 ## Any other register
 

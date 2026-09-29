@@ -80,6 +80,9 @@ def entity_unique_ids(inverter_id: str, extended: bool) -> set[str]:
         f"{inverter_id}_refresh",
         f"{inverter_id}_datalogger_time",
         f"{inverter_id}_sync_datalogger_time",
+        f"{inverter_id}_battery_first_schedule",
+        f"{inverter_id}_grid_first_schedule",
+        f"{inverter_id}_load_first_schedule",
         f"{inverter_id}_{AC_CHARGE.key}",
     }
     keys.update(f"{inverter_id}_{item.key}" for item in PERCENT_REGISTERS)

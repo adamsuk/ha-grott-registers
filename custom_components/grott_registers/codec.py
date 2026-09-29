@@ -6,6 +6,8 @@ hour and the low byte is the minute. 05:30 is 0x051e, not decimal 530.
 
 from __future__ import annotations
 
+from dataclasses import dataclass
+
 LOGGER_META_KEYS = frozenset({"ip", "port", "protocol"})
 
 # start register of each (schedule, slot) triple. The next two registers are
@@ -174,6 +176,75 @@ def normalize_datalogger_time(value: str) -> str:
     if not text:
         raise ValueError("datalogger clock was empty")
     return text
+
+
+@dataclass(frozen=True)
+class ScheduleBlock:
+    """One slice of the day, in minutes from local midnight.
+
+    end_minute is exclusive and can be 1440, which is the next midnight.
+    Load first fills every minute that no enabled window covers.
+    """
+
+    mode: str
+    start_minute: int
+    end_minute: int
+    slot: int | None = None
+    start_register: int | None = None
+
+
+_MODE_ORDER = {"battery": 0, "grid": 1, "load": 2}
+
+
+def schedule_blocks(registers: dict[int, str], extended: bool) -> list[ScheduleBlock]:
+    """Build the day from enabled slots. Disabled and non-boolean enables are skipped."""
+    windows: list[tuple[int, int, str, int, int]] = []
+    last_slot = 6 if extended else 3
+    for schedule in ("battery", "grid"):
+        for slot in range(1, last_slot + 1):
+            start_addr, stop_addr, enable_addr = slot_registers(schedule, slot)
+            enable = registers.get(enable_addr)
+            start_raw = registers.get(start_addr)
+            stop_raw = registers.get(stop_addr)
+            if enable is None or start_raw is None or stop_raw is None:
+                continue
+            if decode_enable(enable) is not True:
+                continue
+            try:
+                start_hour, start_minute = decode_time(start_raw)
+                stop_hour, stop_minute = decode_time(stop_raw)
+            except ValueError:
+                continue
+            start = start_hour * 60 + start_minute
+            stop = stop_hour * 60 + stop_minute
+            if start == stop:
+                continue
+            if stop > start:
+                windows.append((start, stop, schedule, slot, start_addr))
+            else:
+                windows.append((start, 1440, schedule, slot, start_addr))
+                windows.append((0, stop, schedule, slot, start_addr))
+
+    covered: list[list[int]] = []
+    for start, stop in sorted((item[0], item[1]) for item in windows):
+        if not covered or start > covered[-1][1]:
+            covered.append([start, stop])
+        else:
+            covered[-1][1] = max(covered[-1][1], stop)
+
+    blocks = [
+        ScheduleBlock(mode, start, stop, slot, register)
+        for start, stop, mode, slot, register in windows
+    ]
+    cursor = 0
+    for start, stop in covered:
+        if start > cursor:
+            blocks.append(ScheduleBlock("load", cursor, start))
+        cursor = stop
+    if cursor < 1440:
+        blocks.append(ScheduleBlock("load", cursor, 1440))
+    blocks.sort(key=lambda block: (block.start_minute, _MODE_ORDER[block.mode], block.slot or 0))
+    return blocks
 
 
 def priority_label(value: str) -> str:

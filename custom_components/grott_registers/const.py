@@ -1,7 +1,7 @@
 """Constants for the Grott Registers integration."""
 
 DOMAIN = "grott_registers"
-VERSION = "0.1.1"
+VERSION = "0.1.2"
 
 CONF_HOST = "host"
 CONF_PORT = "port"
@@ -17,7 +17,7 @@ DEFAULT_SCAN_INTERVAL = 15
 MIN_SCAN_INTERVAL = 5
 MAX_SCAN_INTERVAL = 240
 
-PLATFORMS = ["sensor", "number", "switch", "time", "button"]
+PLATFORMS = ["sensor", "number", "switch", "time", "button", "calendar"]
 
 SERVICE_READ = "read_register"
 SERVICE_WRITE = "write_register"

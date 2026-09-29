@@ -43,6 +43,7 @@ pack_slot = _codec.pack_slot
 parse_clock = _codec.parse_clock
 poll_addresses = _codec.poll_addresses
 priority_label = _codec.priority_label
+schedule_blocks = _codec.schedule_blocks
 slot_registers = _codec.slot_registers
 entity_unique_ids = _definitions.entity_unique_ids
 slot_definitions = _definitions.slot_definitions
@@ -116,6 +117,9 @@ class CodecTest(unittest.TestCase):
         self.assertIn("KTM0CM8032_grid_slot_4_enable", extended)
         self.assertIn("KTM0CM8032_datalogger_time", ids)
         self.assertIn("KTM0CM8032_sync_datalogger_time", ids)
+        self.assertIn("KTM0CM8032_battery_first_schedule", ids)
+        self.assertIn("KTM0CM8032_grid_first_schedule", ids)
+        self.assertIn("KTM0CM8032_load_first_schedule", ids)
         self.assertGreater(len(extended), len(ids))
 
     def test_datalogger_clock_text(self) -> None:
@@ -125,6 +129,57 @@ class CodecTest(unittest.TestCase):
         )
         with self.assertRaises(ValueError):
             normalize_datalogger_time(" \x00 ")
+
+    def test_schedule_uses_enabled_windows_and_load_first_gaps(self) -> None:
+        registers = {
+            1100: "0000",
+            1101: "051e",
+            1102: "0001",
+            1103: "0a37",
+            1104: "0a3a",
+            1105: "0000",
+            1106: "0000",
+            1107: "0000",
+            1108: "0000",
+            1080: "170f",
+            1081: "173b",
+            1082: "0000",
+            1083: "0000",
+            1084: "0000",
+            1085: "0000",
+            1086: "0000",
+            1087: "0000",
+            1088: "0000",
+        }
+        blocks = schedule_blocks(registers, False)
+        self.assertEqual(
+            [(block.mode, block.start_minute, block.end_minute, block.slot) for block in blocks],
+            [("battery", 0, 5 * 60 + 30, 1), ("load", 5 * 60 + 30, 24 * 60, None)],
+        )
+
+    def test_schedule_splits_midnight_and_ignores_odd_enable(self) -> None:
+        registers = {
+            1100: "1600",
+            1101: "0200",
+            1102: "0001",
+            1080: "0100",
+            1081: "0300",
+            1082: "0001",
+            1026: "0000",
+            1027: "1727",
+            1028: "1737",
+        }
+        blocks = schedule_blocks(registers, True)
+        shown = [(block.mode, block.start_minute, block.end_minute, block.slot) for block in blocks]
+        self.assertEqual(
+            shown,
+            [
+                ("battery", 0, 2 * 60, 1),
+                ("grid", 60, 3 * 60, 1),
+                ("load", 3 * 60, 22 * 60, None),
+                ("battery", 22 * 60, 24 * 60, 1),
+            ],
+        )
 
 
 if __name__ == "__main__":
