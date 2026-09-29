@@ -7,7 +7,14 @@ from typing import Any
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant
 
-from .const import CONF_HOST, CONF_INVERTER, CONF_PORT, DOMAIN
+from .const import (
+    CLOCK_SOURCE,
+    CONF_DATALOGGER,
+    CONF_HOST,
+    CONF_INVERTER,
+    CONF_PORT,
+    DOMAIN,
+)
 from .coordinator import GrottCoordinator
 
 
@@ -22,6 +29,9 @@ async def async_get_config_entry_diagnostics(
         "host": entry.data[CONF_HOST],
         "port": entry.data[CONF_PORT],
         "inverter_id": entry.data[CONF_INVERTER],
+        "datalogger_id": entry.data.get(CONF_DATALOGGER),
+        "datalogger_time": coordinator.datalogger_time,
+        "datalogger_time_set_from": CLOCK_SOURCE,
         "last_update_success": coordinator.last_update_success,
         "registers": registers,
     }

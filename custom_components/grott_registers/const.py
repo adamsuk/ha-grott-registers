@@ -1,7 +1,7 @@
 """Constants for the Grott Registers integration."""
 
 DOMAIN = "grott_registers"
-VERSION = "0.1.0"
+VERSION = "0.1.1"
 
 CONF_HOST = "host"
 CONF_PORT = "port"
@@ -11,6 +11,8 @@ CONF_SCAN_INTERVAL = "scan_interval"
 CONF_EXTENDED = "extended_slots"
 
 DEFAULT_PORT = 5782
+DATALOGGER_CLOCK_REGISTER = 31
+CLOCK_SOURCE = "grott server clock"
 DEFAULT_SCAN_INTERVAL = 15
 MIN_SCAN_INTERVAL = 5
 MAX_SCAN_INTERVAL = 240
@@ -22,3 +24,4 @@ SERVICE_WRITE = "write_register"
 SERVICE_WRITE_SLOT = "write_slot"
 SERVICE_WRITE_MULTI = "write_registers"
 SERVICE_REFRESH = "refresh"
+SERVICE_SYNC_CLOCK = "sync_datalogger_time"

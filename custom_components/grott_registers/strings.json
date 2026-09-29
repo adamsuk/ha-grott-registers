@@ -101,6 +101,13 @@
       "fields": {
         "inverter_id": {"name": "Inverter serial", "description": "Required only when more than one inverter is configured."}
       }
+    },
+    "sync_datalogger_time": {
+      "name": "Sync datalogger time",
+      "description": "Set the datalogger clock from the grott server's local time. Schedule windows follow this clock, not the Home Assistant clock. Daylight saving follows the timezone of the machine running grottserver.",
+      "fields": {
+        "inverter_id": {"name": "Inverter serial", "description": "Required only when more than one inverter is configured."}
+      }
     }
   }
 }

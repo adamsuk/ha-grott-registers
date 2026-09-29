@@ -8,7 +8,7 @@ from homeassistant.core import HomeAssistant
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 
 from .codec import priority_label
-from .const import DOMAIN
+from .const import CLOCK_SOURCE, DATALOGGER_CLOCK_REGISTER, DOMAIN
 from .coordinator import GrottCoordinator
 from .entity import GrottEntity
 
@@ -21,7 +21,9 @@ async def async_setup_entry(
     async_add_entities: AddEntitiesCallback,
 ) -> None:
     coordinator: GrottCoordinator = hass.data[DOMAIN][entry.entry_id]
-    async_add_entities([GrottPrioritySensor(coordinator)])
+    async_add_entities(
+        [GrottPrioritySensor(coordinator), GrottDataloggerTimeSensor(coordinator)]
+    )
 
 
 class GrottPrioritySensor(GrottEntity, SensorEntity):
@@ -46,3 +48,27 @@ class GrottPrioritySensor(GrottEntity, SensorEntity):
     @property
     def extra_state_attributes(self) -> dict[str, str | int]:
         return {"register": PRIORITY_REGISTER, "raw": self.coordinator.raw(PRIORITY_REGISTER)}
+
+
+class GrottDataloggerTimeSensor(GrottEntity, SensorEntity):
+    """Register 31. The schedule follows this clock."""
+
+    _attr_icon = "mdi:clock-outline"
+
+    def __init__(self, coordinator: GrottCoordinator) -> None:
+        super().__init__(coordinator, "datalogger_time", "Datalogger time")
+
+    @property
+    def available(self) -> bool:
+        return self.coordinator.datalogger_time is not None
+
+    @property
+    def native_value(self) -> str | None:
+        return self.coordinator.datalogger_time
+
+    @property
+    def extra_state_attributes(self) -> dict[str, str | int]:
+        return {
+            "register": DATALOGGER_CLOCK_REGISTER,
+            "set_from": CLOCK_SOURCE,
+        }

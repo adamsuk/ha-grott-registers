@@ -13,12 +13,14 @@ from homeassistant.helpers import entity_registry as er
 
 from .codec import encode_time, normalize_schedule, parse_clock
 from .const import (
+    CLOCK_SOURCE,
     CONF_EXTENDED,
     CONF_INVERTER,
     DOMAIN,
     PLATFORMS,
     SERVICE_READ,
     SERVICE_REFRESH,
+    SERVICE_SYNC_CLOCK,
     SERVICE_WRITE,
     SERVICE_WRITE_MULTI,
     SERVICE_WRITE_SLOT,
@@ -83,6 +85,7 @@ async def async_unload_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
                 SERVICE_WRITE_SLOT,
                 SERVICE_WRITE_MULTI,
                 SERVICE_REFRESH,
+                SERVICE_SYNC_CLOCK,
             ):
                 hass.services.async_remove(DOMAIN, service)
     return unload_ok
@@ -161,6 +164,11 @@ def _async_register_services(hass: HomeAssistant) -> None:
             raise HomeAssistantError(f"Refresh failed: {coordinator.last_exception}")
         return {"registers": len(coordinator.data or {})}
 
+    async def _sync_clock(call: ServiceCall) -> dict[str, Any]:
+        coordinator = _coordinator_from_call(hass, call)
+        value = await coordinator.async_sync_datalogger_time()
+        return {"datalogger_time": value, "set_from": CLOCK_SOURCE}
+
     hass.services.async_register(
         DOMAIN, SERVICE_READ, _read, schema=_READ_SCHEMA, supports_response=SupportsResponse.ONLY
     )
@@ -185,6 +193,13 @@ def _async_register_services(hass: HomeAssistant) -> None:
         DOMAIN,
         SERVICE_REFRESH,
         _refresh,
+        schema=_REFRESH_SCHEMA,
+        supports_response=SupportsResponse.OPTIONAL,
+    )
+    hass.services.async_register(
+        DOMAIN,
+        SERVICE_SYNC_CLOCK,
+        _sync_clock,
         schema=_REFRESH_SCHEMA,
         supports_response=SupportsResponse.OPTIONAL,
     )

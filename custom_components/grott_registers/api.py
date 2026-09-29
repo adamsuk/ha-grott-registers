@@ -115,6 +115,18 @@ class GrottClient:
         """Write start, stop, and enable in one multiregister call."""
         await self.async_write_multi(inverter_id, start, start + 2, packed_hex)
 
+    async def async_set_datalogger_time(self, datalogger_id: str) -> None:
+        """Ask grottserver to write its own local time into datalogger register 31.
+
+        The datetime command takes no time argument. grottserver stamps
+        datetime.now() on the machine running it.
+        """
+        await self._request(
+            "PUT",
+            "/datalogger",
+            {"command": "datetime", "datalogger": datalogger_id},
+        )
+
     async def _read_once(
         self, target: str, device_id: str, register: int, fmt: str
     ) -> str:

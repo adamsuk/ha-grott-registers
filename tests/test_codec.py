@@ -37,6 +37,7 @@ decode_time = _codec.decode_time
 encode_time = _codec.encode_time
 format_clock = _codec.format_clock
 inverters_from_payload = _codec.inverters_from_payload
+normalize_datalogger_time = _codec.normalize_datalogger_time
 normalize_schedule = _codec.normalize_schedule
 pack_slot = _codec.pack_slot
 parse_clock = _codec.parse_clock
@@ -113,7 +114,17 @@ class CodecTest(unittest.TestCase):
         self.assertNotIn("KTM0CM8032_battery_slot_4_start", ids)
         extended = entity_unique_ids("KTM0CM8032", True)
         self.assertIn("KTM0CM8032_grid_slot_4_enable", extended)
+        self.assertIn("KTM0CM8032_datalogger_time", ids)
+        self.assertIn("KTM0CM8032_sync_datalogger_time", ids)
         self.assertGreater(len(extended), len(ids))
+
+    def test_datalogger_clock_text(self) -> None:
+        self.assertEqual(
+            normalize_datalogger_time("  2026-09-29 11:24:00\x00"),
+            "2026-09-29 11:24:00",
+        )
+        with self.assertRaises(ValueError):
+            normalize_datalogger_time(" \x00 ")
 
 
 if __name__ == "__main__":

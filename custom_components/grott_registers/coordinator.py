@@ -20,18 +20,21 @@ from .codec import (
     decode_enable,
     encode_enable,
     encode_time,
+    normalize_datalogger_time,
     normalize_hex,
     pack_slot,
     poll_addresses,
     slot_registers,
 )
 from .const import (
+    CLOCK_SOURCE,
     CONF_DATALOGGER,
     CONF_EXTENDED,
     CONF_HOST,
     CONF_INVERTER,
     CONF_PORT,
     CONF_SCAN_INTERVAL,
+    DATALOGGER_CLOCK_REGISTER,
     DEFAULT_SCAN_INTERVAL,
     DOMAIN,
     VERSION,
@@ -72,6 +75,7 @@ class GrottCoordinator(DataUpdateCoordinator[dict[int, str]]):
         # place and writes mutate the same object. A fresh dict here would let
         # a stale poll replace a write that landed in between.
         self._write_lock = asyncio.Lock()
+        self.datalogger_time: str | None = None
 
     @property
     def extended(self) -> bool:
@@ -121,7 +125,59 @@ class GrottCoordinator(DataUpdateCoordinator[dict[int, str]]):
             else:
                 self.data.clear()
                 self.data.update(current)
+            await self._refresh_datalogger_clock()
             return self.data
+
+    async def _refresh_datalogger_clock(self) -> None:
+        """Read register 31. A miss keeps the previous clock."""
+        if not self.datalogger_id:
+            return
+        try:
+            raw = await self.client.async_read_register(
+                target="datalogger",
+                device_id=self.datalogger_id,
+                register=DATALOGGER_CLOCK_REGISTER,
+                fmt="text",
+            )
+            self.datalogger_time = normalize_datalogger_time(raw)
+        except (GrottApiError, ValueError) as err:
+            _LOGGER.warning("Datalogger clock was not read: %s", err)
+
+    async def async_sync_datalogger_time(self) -> str:
+        """Set the logger clock from the grott server, then read it back.
+
+        grottserver writes its own local time. Home Assistant's clock is not
+        sent. The schedule windows follow whatever comes back.
+        """
+        if not self.datalogger_id:
+            raise HomeAssistantError("This entry has no datalogger serial")
+        async with self._write_lock:
+            try:
+                await self.client.async_set_datalogger_time(self.datalogger_id)
+                raw = await self.client.async_read_register(
+                    target="datalogger",
+                    device_id=self.datalogger_id,
+                    register=DATALOGGER_CLOCK_REGISTER,
+                    fmt="text",
+                )
+                value = normalize_datalogger_time(raw)
+            except GrottApiError as err:
+                raise HomeAssistantError(str(err)) from err
+            except ValueError as err:
+                raise HomeAssistantError(str(err)) from err
+            self.datalogger_time = value
+            self._notify_clock()
+        _LOGGER.info(
+            "Datalogger clock read back as %s, set from the %s", value, CLOCK_SOURCE
+        )
+        return value
+
+    def _notify_clock(self) -> None:
+        """Refresh entities after a clock read that did not replace schedule data."""
+        if self.data is not None and self.last_update_success:
+            self.async_set_updated_data(self.data)
+            return
+        self.async_update_listeners()
 
     async def async_write_percent(self, address: int, value: int) -> None:
         if address in SLOT_REGISTERS:

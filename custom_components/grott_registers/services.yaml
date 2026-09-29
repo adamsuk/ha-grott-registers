@@ -118,3 +118,9 @@ refresh:
     inverter_id:
       selector:
         text:
+
+sync_datalogger_time:
+  fields:
+    inverter_id:
+      selector:
+        text:

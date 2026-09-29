@@ -168,6 +168,14 @@ def inverters_from_payload(payload: dict) -> dict[str, str]:
     return found
 
 
+def normalize_datalogger_time(value: str) -> str:
+    """Return the datalogger clock text with padding removed."""
+    text = str(value).replace("\x00", "").strip()
+    if not text:
+        raise ValueError("datalogger clock was empty")
+    return text
+
+
 def priority_label(value: str) -> str:
     try:
         word = int(normalize_hex(value), 16)
